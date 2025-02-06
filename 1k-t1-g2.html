@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>音声から単語を当てるゲーム</title>
+  <style>
+    /* 基本スタイル */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 100vh;
+      color: #333333;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    /* ゲーム説明のスタイル */
+    #instructions {
+      font-size: 16px;
+      margin-top: 10px;
+      color: #555;
+      text-align: left;
+      max-width: 400px;
+    }
+    /* 再生ボタンのスタイル */
+    #play-button {
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #3498db;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    #play-button:hover {
+      background: #2980b9;
+      transform: scale(1.05);
+    }
+    /* 選択肢ボタンのスタイル */
+    #options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 15px;
+      width: 80%;
+      max-width: 300px;
+      margin: auto;
+    }
+    #options button {
+      padding: 12px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #ecf0f1;
+      color: #333333;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    #options button:hover {
+      transform: scale(1.05);
+    }
+    /* フィードバックのスタイル */
+    #feedback {
+      font-size: 20px;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    .correct {
+      color: #2ecc71;
+    }
+    .incorrect {
+      color: #e74c3c;
+    }
+    /* 戻るボタンのスタイル */
+    #back-button {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 12px 24px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #e74c3c;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    #back-button:hover {
+      background: #c0392b;
+      transform: scale(1.05);
+    }
+    /* 「再挑戦」ボタンのスタイル */
+    #retry-button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      background: #f1c40f;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    #retry-button:hover {
+      background: #e67e22;
+      transform: scale(1.05);
+    }
+    /* 説明を非表示にするアニメーション */
+    .hidden {
+      display: none;
+    }
+    /* レスポンシブデザイン */
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 20px;
+      }
+      #play-button {
+        font-size: 16px;
+        padding: 10px 20px;
+      }
+      #options button {
+        font-size: 16px;
+        padding: 10px;
+      }
+      #feedback {
+        font-size: 18px;
+      }
+      #back-button {
+        font-size: 16px;
+        padding: 10px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>音声から単語を当てるゲーム</h1>
+  <!-- ゲーム説明 -->
+  <div id="instructions">
+    <p>このゲームでは、再生される音声を聞いて正しい日本語の意味を選んでください。</p>
+    <p>1. 「音声を再生」ボタンを押して音声を聞きます。</p>
+    <p>2. 表示される選択肢の中から正解だと思うものを選びます。</p>
+    <p>3. 正解か不正解かがフィードバックされます。</p>
+  </div>
+  <!-- 音声再生ボタン -->
+  <button id="play-button" onclick="startGame()">音声を再生</button>
+  <div id="options"></div>
+  <div id="feedback"></div>
+  <!-- 再挑戦ボタン -->
+  <button id="retry-button" class="hidden" onclick="retryQuestion()">再挑戦</button>
+  <!-- 戻るボタン -->
+  <button id="back-button" class="hidden" onclick="goBack()">戻る</button>
+  <script>
+    // 単語データ（音声ファイルは「sound」フォルダ内に配置）
+    const words = [
+      { text: "你", pinyin: "nǐ", japanese: "あなた", audio: "sound/1k-t-003-01.mp3" },
+      { text: "你好", pinyin: "nǐhǎo", japanese: "こんにちは!", audio: "sound/1k-t-003-02.mp3" },
+      { text: "我", pinyin: "wǒ", japanese: "私", audio: "sound/1k-t-003-03.mp3" },
+      { text: "姓", pinyin: "xìng", japanese: "姓", audio: "sound/1k-t-003-04.mp3" },
+      { text: "叫", pinyin: "jiào", japanese: "～という", audio: "sound/1k-t-003-05.mp3" },
+      { text: "山本优子", pinyin: "Shānběn Yōuzǐ", japanese: "山本優子（人の名前）", audio: "sound/1k-t-003-06.mp3" },
+      { text: "李明", pinyin: "Lǐ Míng", japanese: "李明（人の名前）", audio: "sound/1k-t-003-07.mp3" },
+      { text: "是", pinyin: "shì", japanese: "です;だ;である", audio: "sound/1k-t-003-08.mp3" },
+      { text: "留学生", pinyin: "liúxuéshēng", japanese: "留学生", audio: "sound/1k-t-003-09.mp3" },
+      { text: "学习", pinyin: "xuéxí", japanese: "学ぶ;勉強する", audio: "sound/1k-t-003-10.mp3" },
+      { text: "日文", pinyin: "Rìwén", japanese: "日本語", audio: "sound/1k-t-003-11.mp3" },
+      { text: "大学生", pinyin: "dàxuéshēng", japanese: "大学生", audio: "sound/1k-t-003-12.mp3" },
+      { text: "中文", pinyin: "Zhōngwén", japanese: "中国語", audio: "sound/1k-t-003-13.mp3" },
+      { text: "再见", pinyin: "zàijiàn", japanese: "さようなら!", audio: "sound/1k-t-003-14.mp3" }
+    ];
+
+    let currentWord = null;
+    let answeredWords = [];
+    let isAnswered = false;
+
+    // 音声再生関数
+    function playAudio(src) {
+      const audio = new Audio(src);
+      audio.play().catch(err => console.error("再生エラー", err));
+    }
+
+    // ゲーム開始：説明を非表示にして問題を再生
+    function startGame() {
+      document.getElementById("instructions").classList.add("hidden");
+      playQuestion();
+    }
+
+    // 問題を再生：ランダムに単語を選択し、音声を再生して選択肢を生成
+    function playQuestion() {
+      if (answeredWords.length === words.length) {
+        endGame();
+        return;
+      }
+
+      do {
+        currentWord = words[Math.floor(Math.random() * words.length)];
+      } while (answeredWords.includes(currentWord.text));
+
+      playAudio(currentWord.audio);
+      generateOptions();
+      document.getElementById("feedback").innerText = "";
+      document.getElementById("retry-button").classList.add("hidden");
+      isAnswered = false;
+    }
+
+    // 選択肢を生成（正解を含む4つ）
+    function generateOptions() {
+      let options = [currentWord];
+      while (options.length < 4) {
+        let candidate = words[Math.floor(Math.random() * words.length)];
+        if (!options.find(opt => opt.text === candidate.text)) {
+          options.push(candidate);
+        }
+      }
+      options.sort(() => 0.5 - Math.random());
+      const optionsDiv = document.getElementById("options");
+      optionsDiv.innerHTML = "";
+      options.forEach(option => {
+        const btn = document.createElement("button");
+        btn.innerText = option.japanese; // 日本語表記を使用
+        btn.onclick = () => checkAnswer(option);
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    // 答えをチェック
+    function checkAnswer(selected) {
+      if (isAnswered) return;
+
+      const feedbackDiv = document.getElementById("feedback");
+      if (selected.text === currentWord.text) {
+        feedbackDiv.innerText = "正解！";
+        feedbackDiv.className = "correct";
+        answeredWords.push(currentWord.text);
+        setTimeout(playQuestion, 1000); // 次の問題へ
+      } else {
+        feedbackDiv.innerText = `不正解、正解は「${currentWord.japanese}」です。`;
+        feedbackDiv.className = "incorrect";
+        document.getElementById("retry-button").classList.remove("hidden");
+        isAnswered = true;
+      }
+    }
+
+    // 再挑戦ボタンの処理
+    function retryQuestion() {
+      document.getElementById("retry-button").classList.add("hidden");
+      playAudio(currentWord.audio);
+      generateOptions();
+      document.getElementById("feedback").innerText = "";
+      isAnswered = false;
+    }
+
+    // ゲーム終了時の処理
+    function endGame() {
+      document.getElementById("options").innerHTML = "";
+      document.getElementById("feedback").innerText = "すべての問題に答えました！お疲れ様でした。";
+      document.getElementById("back-button").classList.remove("hidden");
+    }
+
+    // 戻るボタンのリンク先設定
+    function goBack() {
+      window.location.href = "1k-t1-g.html"; // 同じフォルダ内のファイルに戻る
+    }
+  </script>
+</body>
+</html>

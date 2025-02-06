@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>音声認識練習</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .container {
+      text-align: center;
+      background-color: #f0f0f0;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 400px;
+      position: relative;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333333;
+    }
+    p {
+      font-size: 16px;
+      margin-bottom: 20px;
+      color: #555;
+      line-height: 1.5;
+    }
+    button {
+      background-color: #003366;
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    button:hover {
+      background-color: #002244;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
+    }
+    button:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .input-area {
+      margin-top: 20px;
+    }
+    input[type="text"] {
+      width: 70%;
+      padding: 12px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    input[type="text"]:focus {
+      border-color: #003366;
+      box-shadow: 0 0 8px rgba(0, 123, 255, 0.3);
+      outline: none;
+    }
+    #feedback {
+      margin-top: 20px;
+      font-size: 18px;
+      color: #333333;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    #feedback.show {
+      opacity: 1;
+    }
+    #completionMessage {
+      display: none;
+      font-size: 20px;
+      color: green;
+      margin-top: 20px;
+    }
+    /* 动画特效 */
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #ff0000;
+      top: -10px;
+      animation: confetti-fall linear 3s infinite;
+    }
+    @keyframes confetti-fall {
+      0% {
+        transform: translateY(-10px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+      }
+    }
+    .fireworks {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: #ff00ff;
+      border-radius: 50%;
+      animation: fireworks-burst 1s ease-out infinite;
+    }
+    @keyframes fireworks-burst {
+      0% {
+        transform: scale(0);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+    .celebration-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    /* 隐藏练习画面 */
+    #practiceScreen {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- 使用说明画面 -->
+  <div class="container" id="startScreen">
+    <h1>音声認識練習のご案内</h1>
+    <p>
+      このシステムは、音声を聞いて漢字を入力する練習用です。<br>
+      1. 「開始」ボタンをクリックして練習をスタートします。<br>
+      2. 音声を再生し、聞こえた漢字を入力してください。<br>
+      3. 「確認」ボタンで回答を送信し、正解なら次の問題へ、不正解なら再挑戦してください。<br>
+      4. すべての問題に正解すると、完成画面とお祝いアニメーションが表示されます。
+    </p>
+    <button id="startButton">開始</button>
+  </div>
+
+  <!-- 练习画面 -->
+  <div class="container" id="practiceScreen">
+    <h1>音声認識練習</h1>
+    <button id="playButton">音声を再生</button>
+    
+    <!-- 隐藏的音频元素 -->
+    <audio id="audio"></audio>
+    
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="ここに漢字を入力してください">
+      <button id="submitButton">確認</button>
+    </div>
+
+    <div id="feedback"></div>
+    <button id="nextButton" style="display: none;">次の問題へ</button>
+    <button id="retryButton" style="display: none;">もう一度</button>
+    <div id="completionMessage">すべての問題が完了しました！お疲れ様でした！</div>
+    <!-- 完成画面用のボタン群 -->
+    <button id="backButton" style="display: none;">戻る</button>
+    <button id="nextPageButton" style="display: none;">次の問題</button>
+  </div>
+
+  <!-- 庆祝动画容器 -->
+  <div id="celebrationContainer" class="celebration-container"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      // 各要素の取得
+      const startScreen = document.getElementById('startScreen');
+      const practiceScreen = document.getElementById('practiceScreen');
+      const startButton = document.getElementById('startButton');
+      const playButton = document.getElementById('playButton');
+      const audio = document.getElementById('audio');
+      const userInput = document.getElementById('userInput');
+      const submitButton = document.getElementById('submitButton');
+      const feedback = document.getElementById('feedback');
+      const nextButton = document.getElementById('nextButton');
+      const retryButton = document.getElementById('retryButton');
+      const completionMessage = document.getElementById('completionMessage');
+      const celebrationContainer = document.getElementById('celebrationContainer');
+      const backButton = document.getElementById('backButton');
+      const nextPageButton = document.getElementById('nextPageButton');  // 新たに追加した「次の問題」ボタン
+
+      // 定义题目和对应的音频文件
+      const questions = [
+        { answer: "你", audioFile: "sound/1k-l1-004-01.mp3" },
+        { answer: "姓", audioFile: "sound/1k-l1-004-02.mp3" },
+        { answer: "叫", audioFile: "sound/1k-l1-004-03.mp3" },
+        { answer: "我", audioFile: "sound/1k-l1-004-04.mp3" }
+      ];
+
+      // 已经回答正确的题目索引
+      const completedQuestions = [];
+
+      // 鼓励的话语数组
+      const encouragementMessages = [
+        "正解です！素晴らしいです！",
+        "すごい！よくできました！",
+        "完璧です！続けて頑張りましょう！",
+        "素晴らしい！次の問題も頑張ってください！",
+        "大正解！あなたは天才ですね！",
+        "よくできました！次も期待しています！",
+        "素晴らしい成果です！続けましょう！",
+        "正解！自信を持って進んでください！",
+        "素晴らしい！これで次のステップに進めますね！",
+        "お見事！次の挑戦も楽しみですね！"
+      ];
+
+      let currentQuestionIndex = -1;
+      let currentQuestion = null;
+
+      // 加载随机问题（未回答的问题）
+      function loadRandomQuestion() {
+        // 过滤掉已经完成的问题
+        const remainingQuestions = questions.filter((_, index) => !completedQuestions.includes(index));
+
+        if (remainingQuestions.length === 0) {
+          // 如果没有剩余问题，显示完成画面并播放庆祝动画
+          showCompletionMessage();
+          startCelebrationAnimation();
+          return;
+        }
+
+        // 随机选择一个未回答的问题
+        const randomIndex = Math.floor(Math.random() * remainingQuestions.length);
+        currentQuestionIndex = questions.indexOf(remainingQuestions[randomIndex]);
+        currentQuestion = questions[currentQuestionIndex];
+        audio.src = currentQuestion.audioFile;
+        userInput.value = '';
+        feedback.textContent = '';
+        feedback.classList.remove('show');
+        nextButton.style.display = 'none';
+        retryButton.style.display = 'none';
+      }
+
+      // 显示完成画面
+      function showCompletionMessage() {
+        completionMessage.style.display = 'block';
+        playButton.style.display = 'none';
+        userInput.style.display = 'none';
+        submitButton.style.display = 'none';
+        feedback.style.display = 'none';
+        nextButton.style.display = 'none';
+        retryButton.style.display = 'none';
+        // 显示完成画面时，显示“戻る”和“次の問題”两个按钮
+        backButton.style.display = 'block';
+        nextPageButton.style.display = 'block';
+      }
+
+      // 开始庆祝动画
+      function startCelebrationAnimation() {
+        const animations = ['confetti', 'fireworks'];
+        const randomAnimation = animations[Math.floor(Math.random() * animations.length)];
+
+        if (randomAnimation === 'confetti') {
+          createConfetti();
+        } else if (randomAnimation === 'fireworks') {
+          createFireworks();
+        }
+      }
+
+      // 创建彩带动画
+      function createConfetti() {
+        for (let i = 0; i < 100; i++) {
+          const confetti = document.createElement('div');
+          confetti.classList.add('confetti');
+          confetti.style.left = Math.random() * 100 + 'vw';
+          confetti.style.animationDuration = Math.random() * 3 + 2 + 's';
+          confetti.style.backgroundColor = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`;
+          celebrationContainer.appendChild(confetti);
+
+          // 移除动画元素
+          setTimeout(() => {
+            confetti.remove();
+          }, 5000);
+        }
+      }
+
+      // 创建烟花动画
+      function createFireworks() {
+        for (let i = 0; i < 20; i++) {
+          const firework = document.createElement('div');
+          firework.classList.add('fireworks');
+          firework.style.left = Math.random() * 100 + 'vw';
+          firework.style.top = Math.random() * 100 + 'vh';
+          firework.style.backgroundColor = `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`;
+          celebrationContainer.appendChild(firework);
+
+          // 移除动画元素
+          setTimeout(() => {
+            firework.remove();
+          }, 1000);
+        }
+      }
+
+      // 开始按钮点击事件，切换到练习界面并加载题目
+      startButton.addEventListener('click', function () {
+        startScreen.style.display = 'none';
+        practiceScreen.style.display = 'block';
+        loadRandomQuestion();
+      });
+
+      // 再生ボタンの点击事件
+      playButton.addEventListener('click', function () {
+        audio.play();
+      });
+
+      // 提交ボタン的点击事件
+      submitButton.addEventListener('click', function () {
+        const userAnswer = userInput.value.trim();
+
+        if (userAnswer === currentQuestion.answer) {
+          // 随机选择一条鼓励的话语
+          const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
+          feedback.textContent = randomMessage;
+          feedback.style.color = "green";
+          feedback.classList.add('show');
+          nextButton.style.display = 'block'; // 显示“下一题”按钮
+
+          // 将当前问题标记为已完成
+          completedQuestions.push(currentQuestionIndex);
+        } else {
+          feedback.textContent = "残念！もう一度試してください。";
+          feedback.style.color = "red";
+          feedback.classList.add('show');
+          retryButton.style.display = 'block'; // 显示“再试一次”按钮
+        }
+      });
+
+      // 下一题按钮点击事件（随机加载下一题）
+      nextButton.addEventListener('click', function () {
+        loadRandomQuestion();
+      });
+
+      // 再试一次按钮点击事件
+      retryButton.addEventListener('click', function () {
+        feedback.textContent = '';
+        feedback.classList.remove('show');
+        retryButton.style.display = 'none';
+        audio.play(); // 自动播放当前问题的音频
+      });
+
+      // 戻る按钮点击事件（返回上一页面）
+      backButton.addEventListener('click', function () {
+        window.location.href = '1k-l.html'; // 跳转到 1k-l.html
+      });
+
+      // 次の問題按钮点击事件，跳转到同一文件夹下的 1k-l1-2.html
+      nextPageButton.addEventListener('click', function () {
+        window.location.href = '1k-l1-2.html';
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文字の順番並べゲーム</title>
+  <style>
+    /* 基本スタイル */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #333333;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #2c3e50;
+      text-align: center;
+    }
+    /* 説明文のスタイル */
+    #instructions {
+      font-size: 16px;
+      text-align: center;
+      margin-bottom: 20px;
+      color: #555;
+    }
+    /* チャレンジ開始ボタン */
+    #start-button {
+      margin: 20px;
+      padding: 12px 24px;
+      font-size: 18px;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    #start-button:hover {
+      transform: scale(1.05);
+    }
+    /* 文字ボタンのスタイル */
+    #letters {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin: 20px 0;
+    }
+    .letter {
+      padding: 10px 15px;
+      background: #3498db;
+      color: white;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, background 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .letter:hover {
+      transform: scale(1.1);
+    }
+    .letter.hidden {
+      visibility: hidden;
+      opacity: 0;
+      transform: scale(0);
+      transition: visibility 0s, opacity 0.3s, transform 0.3s;
+    }
+    /* 答え表示エリアのスタイル */
+    #answer {
+      font-size: 20px;
+      margin: 20px 0;
+      min-height: 40px;
+      color: #2c3e50;
+      font-weight: bold;
+      text-align: center;
+    }
+    /* ボタンのスタイル */
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.2s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    button#submit {
+      background: #2ecc71;
+      color: white;
+    }
+    button#next-question {
+      background: #3498db;
+      color: white;
+      display: none; /* 默认隐藏 */
+    }
+    button#end-game {
+      background: #e74c3c;
+      color: white;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    /* フィードバックのスタイル */
+    #feedback {
+      font-size: 18px;
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+    }
+    .correct {
+      color: #2ecc71;
+    }
+    .incorrect {
+      color: #e74c3c;
+      font-size: 20px;
+    }
+    /* 再挑戦ボタンのスタイル */
+    #retry-buttons {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    #retry-buttons button {
+      margin: 10px;
+    }
+    /* 完了後のアニメーション */
+    @keyframes fadeInOut {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+    #completion-message {
+      display: none;
+      font-size: 24px;
+      color: #2ecc71;
+      animation: fadeInOut 2s infinite;
+      text-align: center;
+    }
+    /* レスポンシブデザイン */
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 20px;
+      }
+      .letter {
+        font-size: 16px;
+        padding: 8px 12px;
+      }
+      #answer {
+        font-size: 18px;
+      }
+      button {
+        font-size: 14px;
+        padding: 8px 16px;
+      }
+      #feedback {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>文字の順番並べゲーム</h1>
+
+  <!-- 初期説明 -->
+  <div id="instructions">
+    <p>このゲームでは、提示された文字を正しい順番に並べて単語を作ってください。</p>
+    <p>準備ができたら「チャレンジ開始」をクリックしてください。</p>
+  </div>
+  <button id="start-button" onclick="startGame()">チャレンジ開始</button>
+
+  <!-- ゲーム本体 -->
+  <div id="game" style="display: none;">
+    <div id="question"></div>
+    <div id="letters"></div>
+    <div id="answer"></div>
+    <button id="submit" onclick="submitAnswer()">回答を送信</button>
+    <button id="next-question" style="display: none;" onclick="nextQuestion()">次の問題へ</button>
+    <div id="feedback"></div>
+    <div id="retry-buttons">
+      <button onclick="retryCurrentQuestion()">もう一度挑戦する</button>
+    </div>
+  </div>
+
+  <!-- 完了後のメッセージ -->
+  <div id="completion-message">
+    <p id="encouragement-text"></p>
+    <button id="end-game" onclick="redirectToNextPage()">終了</button>
+  </div>
+
+  <script>
+    // 問題リスト
+    const questions = [
+      { chinese: "你", japanese: "あなた", pinyin: "nǐ" },
+      { chinese: "你好", japanese: "こんにちは!", pinyin: "nǐhǎo" },
+      { chinese: "我", japanese: "私", pinyin: "wǒ" },
+      { chinese: "姓", japanese: "姓", pinyin: "xìng" },
+      { chinese: "叫", japanese: "～という", pinyin: "jiào" },
+      { chinese: "山本优子", japanese: "山本優子（人の名前）", pinyin: "Shānběn Yōuzǐ" },
+      { chinese: "李明", japanese: "李明（人の名前）", pinyin: "Lǐ Míng" },
+      { chinese: "是", japanese: "です;だ;である", pinyin: "shì" },
+      { chinese: "留学生", japanese: "留学生", pinyin: "liúxuéshēng" },
+      { chinese: "学习", japanese: "学ぶ;勉強する", pinyin: "xuéxí" },
+      { chinese: "日文", japanese: "日本語", pinyin: "Rìwén" },
+      { chinese: "大学生", japanese: "大学生", pinyin: "dàxuéshēng" },
+      { chinese: "中文", japanese: "中国語", pinyin: "Zhōngwén" },
+      { chinese: "再见", japanese: "さようなら!", pinyin: "zàijiàn" }
+    ];
+
+    let currentQuestionIndex = -1;
+    let targetWord = "";
+    let scrambled = [];
+    let userAnswer = "";
+
+    // ゲーム開始
+    function startGame() {
+      document.getElementById("instructions").style.display = "none";
+      document.getElementById("start-button").style.display = "none";
+      document.getElementById("game").style.display = "block";
+
+      nextRandomQuestion();
+    }
+
+    // ランダムで次の問題を選択
+    function nextRandomQuestion() {
+      if (currentQuestionIndex >= 0 && !isAllQuestionsCompleted()) {
+        markQuestionAsSkipped(currentQuestionIndex);
+      }
+
+      if (isAllQuestionsCompleted()) {
+        showCompletionMessage();
+        return;
+      }
+
+      const availableQuestions = questions.filter((_, i) => !isQuestionAnswered(i));
+      const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+      currentQuestionIndex = questions.indexOf(availableQuestions[randomIndex]);
+
+      loadQuestion(currentQuestionIndex);
+    }
+
+    // 問題を読み込む
+    function loadQuestion(index) {
+      const question = questions[index];
+      targetWord = question.chinese;
+      scrambled = shuffle(targetWord.split(''));
+
+      document.getElementById("question").innerText = `問題: ${question.japanese} (${question.pinyin})`;
+      renderLetters();
+
+      document.getElementById("feedback").innerText = "";
+      document.getElementById("feedback").className = "";
+      document.getElementById("retry-buttons").style.display = "none";
+      document.getElementById("next-question").style.display = "none";
+      document.getElementById("submit").style.display = "inline-block"; // 回答ボタンを表示
+      enableButtons(); // ボタンを有効化
+    }
+
+    // 文字ボタンを再生成
+    function renderLetters() {
+      const lettersDiv = document.getElementById("letters");
+      lettersDiv.innerHTML = ""; // 既存のボタンをクリア
+      userAnswer = "";
+      document.getElementById("answer").innerText = "";
+
+      scrambled.forEach(letter => {
+        const span = document.createElement("span");
+        span.classList.add("letter");
+        span.innerText = letter;
+        span.onclick = function() {
+          if (!span.classList.contains("hidden")) {
+            userAnswer += letter;
+            document.getElementById("answer").innerText = userAnswer;
+            span.classList.add("hidden");
+          }
+        };
+        lettersDiv.appendChild(span);
+      });
+    }
+
+    // 回答のチェック
+    function submitAnswer() {
+      const feedbackDiv = document.getElementById("feedback");
+      if (userAnswer === targetWord) {
+        feedbackDiv.innerText = "正解！次の問題に進みます。";
+        feedbackDiv.className = "correct";
+        markQuestionAsAnswered(currentQuestionIndex);
+
+        // 正解時の処理
+        document.getElementById("submit").style.display = "none"; // 回答ボタンを非表示
+        document.getElementById("next-question").style.display = "block"; // 次の問題ボタンを表示
+        disableButtons(); // ボタンを無効化
+      } else {
+        feedbackDiv.innerHTML = `不正解！正解は「<strong>${targetWord}</strong>」です。`;
+        feedbackDiv.className = "incorrect";
+        document.getElementById("retry-buttons").style.display = "flex"; // 再挑戦ボタンを表示
+        disableButtons(); // ボタンを無効化
+      }
+    }
+
+    // 次の問題へ
+    function nextQuestion() {
+      nextRandomQuestion();
+    }
+
+    // 再挑戦
+    function retryCurrentQuestion() {
+      loadQuestion(currentQuestionIndex);
+    }
+
+    // 全ての問題が完了したか確認
+    function isAllQuestionsCompleted() {
+      return questions.every((_, i) => isQuestionAnswered(i));
+    }
+
+    // 問題が解答済みかどうか確認
+    function isQuestionAnswered(index) {
+      return questions[index].answered || false;
+    }
+
+    // 問題を解答済みとしてマーク
+    function markQuestionAsAnswered(index) {
+      questions[index].answered = true;
+    }
+
+    // 問題をスキップとしてマーク
+    function markQuestionAsSkipped(index) {
+      questions[index].skipped = true;
+    }
+
+    // 完了メッセージを表示
+    function showCompletionMessage() {
+      document.getElementById("game").style.display = "none";
+      document.getElementById("completion-message").style.display = "block";
+
+      const encouragementMessages = [
+        "素晴らしい！全ての問題をクリアしました！",
+        "おめでとうございます！完璧なパフォーマンスです！",
+        "よくやりました！次のステップに進んでください！"
+      ];
+      const randomMessage = encouragementMessages[Math.floor(Math.random() * encouragementMessages.length)];
+      document.getElementById("encouragement-text").innerText = randomMessage;
+    }
+
+    // 次のページに遷移
+    function redirectToNextPage() {
+      window.location.href = "1k-t1-g.html";
+    }
+
+    // ボタンを無効化
+    function disableButtons() {
+      const buttons = document.querySelectorAll(".letter, #submit");
+      buttons.forEach(button => {
+        button.style.pointerEvents = "none";
+        button.style.opacity = "0.5";
+      });
+    }
+
+    // ボタンを有効化
+    function enableButtons() {
+      const buttons = document.querySelectorAll(".letter, #submit");
+      buttons.forEach(button => {
+        button.style.pointerEvents = "auto";
+        button.style.opacity = "1";
+      });
+    }
+
+    // 配列のシャッフル
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+  </script>
+</body>
+</html>

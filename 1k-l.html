@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>練習リンク</title>
+  <!-- Google Fonts の読み込み（必要に応じて） -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    /* 全体のリセットと基本スタイル */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: linear-gradient(135deg, #f9f9f9, #f9f9f9);
+      font-family: 'Noto Sans JP', sans-serif;
+      line-height: 1.6;
+      text-align: center;
+      padding: 2em;
+    }
+    /* ヘッダー */
+    header {
+      background: linear-gradient(135deg, #003366, #003366);
+      color: #fff;
+      padding: 1.5em;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      margin-bottom: 2em;
+    }
+    .course-title {
+      font-family: "MS Gothic", sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      margin-bottom: 0.2em;
+    }
+    .greeting {
+      font-family: simhei, sans-serif;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      margin-bottom: 0.5em;
+    }
+    /* メイン領域 */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      background-color: rgba(255, 255, 255, 0.95);
+      padding: 2em;
+      border-radius: 10px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+    .course-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2em;
+    }
+    /* リンク配置（フレックスレイアウト） */
+    .course-row {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 50px;
+      flex-wrap: wrap;
+    }
+    .course-item {
+      background: #fff;
+      padding: 1em;
+      border-radius: 10px;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .course-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+    .course-item img {
+      width: 90px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 0.5em;
+    }
+    .course-label {
+      font-family: "MS Gothic", sans-serif;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      color: #03F;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    .course-label:hover {
+      color: #0055aa;
+      text-decoration: underline;
+    }
+    /* 戻るリンクのスタイル */
+    .back-link {
+      display: inline-block;
+      margin-top: 2em;
+      font-family: "MS Gothic", sans-serif;
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      color: #03F;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    .back-link:hover {
+      color: #0055aa;
+      text-decoration: underline;
+    }
+    /* グローバルリンクスタイル */
+    a:link, a:visited {
+      color: #03F;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 class="course-title">練習リンク</h1>
+    <h2 class="greeting">さあ、練習を始めましょう！</h2>
+  </header>
+  <main>
+    <div class="course-container">
+      <div class="course-row">
+        <div class="course-item">
+          <a href="1k-l1-1.html" target="_blank">
+            <!-- 必要に応じて画像パスを変更 -->
+            <img src="image/2.png" alt="練習Ⅰ">
+          </a>
+          <a class="course-label" href="1k-l1-1.html">練習Ⅰ</a>
+        </div>
+        <div class="course-item">
+          <a href="1k-l2-1.html" target="_blank">
+            <!-- 必要に応じて画像パスを変更 -->
+            <img src="image/4.png" alt="練習Ⅱ">
+          </a>
+          <a class="course-label" href="1k-l2-1.html">練習Ⅱ</a>
+        </div>
+      </div>
+      <!-- 戻るリンク -->
+      <a class="back-link" href="1k.html">戻る</a>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>記憶カードマッチングゲーム</title>
+  <style>
+    /* 基本スタイル設定 */
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      color: #333333;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    /* ゲームエリアのスタイル */
+    #game-board {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+      gap: 15px;
+      max-width: 400px;
+      width: 100%;
+      margin: auto;
+    }
+    .card {
+      width: 100%;
+      aspect-ratio: 3/4;
+      background: #ecf0f1;
+      border: 2px solid #bdc3c7;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: transparent;
+      cursor: pointer;
+      transition: transform 0.3s, background 0.3s, color 0.3s, border 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .card.flipped {
+      background: #fff;
+      color: #2980b9;
+      border-color: #2980b9;
+      transform: scale(1.05);
+    }
+    .card.matched {
+      cursor: default;
+      transform: scale(1);
+    }
+    /* ボタンのスタイル */
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+    .controls button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .controls button:hover {
+      transform: scale(1.05);
+    }
+    .controls button#restart {
+      background: #e74c3c;
+      color: white;
+    }
+    .controls button#back {
+      background: #3498db;
+      color: white;
+    }
+    /* 説明文とスタートボタン */
+    #instructions {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 16px;
+      color: #555;
+    }
+    #start-button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    #start-button:hover {
+      background: #2ecc71;
+      transform: scale(1.05);
+    }
+    /* 初期状態で非表示にする要素 */
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>記憶カードマッチングゲーム</h1>
+
+  <!-- ゲーム説明 -->
+  <div id="instructions">
+    <p>このゲームでは、中国語と日本語の単語をペアにしてください。</p>
+    <p>カードをクリックして、正しいペアを見つけてください。</p>
+    <button id="start-button">チャレンジ開始</button>
+  </div>
+
+  <!-- ゲームエリア（初期状態で非表示） -->
+  <div id="game-board" class="hidden"></div>
+
+  <!-- 制御ボタン（初期状態で非表示） -->
+  <div class="controls hidden" id="control-buttons">
+    <button id="restart">もう一度</button>
+    <button id="back">終了</button>
+  </div>
+
+  <script>
+    // 単語対の定義（中文和日文）
+    const allWords = [
+      { chinese: "你", japanese: "あなた" },
+      { chinese: "你好", japanese: "こんにちは" },
+      { chinese: "我", japanese: "私" },
+      { chinese: "山本", japanese: "やまもと" },
+      { chinese: "谢谢", japanese: "ありがとう" },
+      { chinese: "再见", japanese: "さようなら" },
+      { chinese: "朋友", japanese: "友達" },
+      { chinese: "学校", japanese: "学校" },
+      { chinese: "老师", japanese: "先生" },
+      { chinese: "学生", japanese: "学生" }
+    ];
+
+    // 为匹配成功的卡片定义一组颜色
+    const matchColors = ["#2ecc71", "#e74c3c", "#3498db", "#f1c40f", "#9b59b6", "#1abc9c"];
+    let currentWords = [];
+    let cards = [];
+    let firstCard = null;
+    let secondCard = null;
+    let lockBoard = false;
+
+    // 随机选取4组单词对
+    function getRandomWords() {
+      const shuffledWords = allWords.sort(() => Math.random() - 0.5);
+      return shuffledWords.slice(0, 4);
+    }
+
+    // 游戏初始化
+    function initGame() {
+      currentWords = getRandomWords();
+      cards = [];
+      currentWords.forEach((word, index) => {
+        cards.push({ id: index, type: 'chinese', text: word.chinese });
+        cards.push({ id: index, type: 'japanese', text: word.japanese });
+      });
+      cards.sort(() => Math.random() - 0.5);
+      renderGameBoard();
+      document.getElementById("control-buttons").classList.add("hidden"); // 隐藏控制按钮
+    }
+
+    // 渲染游戏面板
+    function renderGameBoard() {
+      const board = document.getElementById("game-board");
+      board.innerHTML = "";
+      cards.forEach((cardData) => {
+        const card = document.createElement("div");
+        card.classList.add("card");
+        card.dataset.id = cardData.id;
+        card.dataset.type = cardData.type;
+        card.dataset.text = cardData.text;
+        card.addEventListener("click", () => {
+          if (lockBoard || card.classList.contains("flipped") || card.classList.contains("matched")) return;
+          flipCard(card);
+        });
+        board.appendChild(card);
+      });
+    }
+
+    // 翻转卡片函数
+    function flipCard(card) {
+      card.classList.add("flipped");
+      card.innerText = card.dataset.text;
+      if (!firstCard) {
+        firstCard = card;
+      } else {
+        secondCard = card;
+        lockBoard = true;
+        checkForMatch();
+      }
+    }
+
+    // 检查两张卡片是否匹配
+    function checkForMatch() {
+      const isMatch = firstCard.dataset.id === secondCard.dataset.id &&
+                      firstCard.dataset.type !== secondCard.dataset.type;
+      if (isMatch) {
+        const colorIndex = parseInt(firstCard.dataset.id) % matchColors.length;
+        const matchColor = matchColors[colorIndex];
+        firstCard.classList.add("matched");
+        secondCard.classList.add("matched");
+        firstCard.style.background = matchColor;
+        firstCard.style.borderColor = matchColor;
+        firstCard.style.color = "#fff";
+        secondCard.style.background = matchColor;
+        secondCard.style.borderColor = matchColor;
+        secondCard.style.color = "#fff";
+        resetBoard();
+        checkGameCompletion(); // 检查游戏是否完成
+      } else {
+        setTimeout(() => {
+          firstCard.classList.remove("flipped");
+          secondCard.classList.remove("flipped");
+          firstCard.innerText = "";
+          secondCard.innerText = "";
+          resetBoard();
+        }, 1000);
+      }
+    }
+
+    // 检查游戏是否完成
+    function checkGameCompletion() {
+      const matchedCards = document.querySelectorAll(".matched");
+      if (matchedCards.length === cards.length) {
+        document.getElementById("control-buttons").classList.remove("hidden"); // 显示控制按钮
+      }
+    }
+
+    // 重置选中状态
+    function resetBoard() {
+      firstCard = null;
+      secondCard = null;
+      lockBoard = false;
+    }
+
+    // 返回按钮功能（跳转到 1k-t1-g.html）
+    document.getElementById("back").addEventListener("click", () => {
+      window.location.href = "1k-t1-g.html"; // 跳转到指定页面
+    });
+
+    // 重新开始按钮功能
+    document.getElementById("restart").addEventListener("click", () => {
+      initGame();
+    });
+
+    // 开始游戏按钮功能
+    document.getElementById("start-button").addEventListener("click", () => {
+      document.getElementById("instructions").classList.add("hidden"); // 隐藏说明
+      document.getElementById("game-board").classList.remove("hidden"); // 显示游戏面板
+      initGame();
+    });
+
+    // 初始化游戏
+    initGame();
+  </script>
+</body>
+</html>

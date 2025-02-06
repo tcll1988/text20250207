@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>漢語自習問題 - 文完成演習</title>
+  <style>
+    /* Google Fonts (Noto Sans JP) を使用 */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap');
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: linear-gradient(135deg, #e0f7fa, #80deea);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .container {
+      background-color: #f0f0f0;
+      padding: 20px 15px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      max-width: 800px;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #00796b;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+    }
+    h2 {
+      font-size: 20px;
+    }
+    .instructions {
+      font-size: 16px;
+      text-align: center;
+      color: #333333;
+      margin-bottom: 20px;
+    }
+    .options {
+      font-size: 14px;
+      text-align: center;
+      color: #555;
+      margin-bottom: 15px;
+    }
+    .text-box {
+      background-color: #f1f8e9;
+      border: 1px solid #cccccc;
+      border-radius: 8px;
+      padding: 15px;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .select-container {
+      display: inline-block;
+      margin: 0 5px;
+      position: relative;
+    }
+    .select-box {
+      font-size: 14px;
+      padding: 5px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.3s ease;
+    }
+    .select-box:focus {
+      border-color: #00796b;
+      outline: none;
+    }
+    button {
+      display: block;
+      margin: 0 auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #00796b;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    button:hover {
+      background-color: #004d40;
+      transform: scale(1.05);
+    }
+    .feedback {
+      font-size: 18px;
+      text-align: center;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+    .feedback.success {
+      color: #2e7d32;
+    }
+    .feedback.error {
+      color: #d32f2f;
+    }
+    .answer-list {
+      margin-top: 15px;
+      font-size: 14px;
+      color: #555;
+      text-align: left;
+      display: none;
+    }
+    .answer-list li {
+      margin: 8px 0;
+    }
+    .retry-button,
+    .back-button {
+      display: none;
+      margin: 20px auto 0;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #ff5722;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s ease, transform 0.3s ease;
+    }
+    .retry-button:hover,
+    .back-button:hover {
+      background-color: #e64a19;
+      transform: scale(1.05);
+    }
+    .section {
+      margin-bottom: 25px;
+    }
+    .translation {
+      font-size: 14px;
+      color: #444;
+      line-height: 1.6;
+      display: none;
+    }
+    /* 初期表示は非表示にする部分 */
+    #quizContent {
+      display: none;
+    }
+    /* Intro部分のスタイル */
+    #intro {
+      background-color: #f0f0f0;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+      max-width: 800px;
+      width: 100%;
+      text-align: center;
+    }
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 20px;
+      }
+      h2 {
+        font-size: 18px;
+      }
+      .instructions, .options {
+        font-size: 14px;
+      }
+      .text-box {
+        font-size: 14px;
+      }
+      button, .retry-button, .back-button {
+        font-size: 14px;
+        padding: 8px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Intro画面 -->
+  <div id="intro">
+    <h1>漢語自習問題</h1>
+    <p class="instructions">
+      この練習では、空欄に適切な語句を選んで文章を完成させます。<br>
+      日本語訳も参考にしながら、正しい語句を選んでください。
+    </p>
+    <button id="startButton">開始</button>
+  </div>
+
+  <!-- 練習問題のコンテンツ -->
+  <div id="quizContent" class="container">
+    <!-- 問題セクション -->
+    <div class="section">
+      <h2>問題</h2>
+      <p class="instructions">
+        以下の文を完成させるために、各空欄に適切な語句を選んでください。<br>
+        日本語訳も掲載されています。
+      </p>
+      <p class="options">
+        選択肢：①&nbsp;是　②&nbsp;学习　③&nbsp;姓　④&nbsp;叫
+      </p>
+      <div class="text-box">
+        您好！我 (
+        <div class="select-container">
+          <select id="blank1" class="select-box">
+            <option value="">選択</option>
+            <option value="是">① 是</option>
+            <option value="学习">② 学习</option>
+            <option value="姓">③ 姓</option>
+            <option value="叫">④ 叫</option>
+          </select>
+        </div>
+        ) 山本，我 (
+        <div class="select-container">
+          <select id="blank2" class="select-box">
+            <option value="">選択</option>
+            <option value="是">① 是</option>
+            <option value="学习">② 学习</option>
+            <option value="姓">③ 姓</option>
+            <option value="叫">④ 叫</option>
+          </select>
+        </div>
+        ) 山本明。我是大学生。我不 (
+        <div class="select-container">
+          <select id="blank3" class="select-box">
+            <option value="">選択</option>
+            <option value="是">① 是</option>
+            <option value="学习">② 学习</option>
+            <option value="姓">③ 姓</option>
+            <option value="叫">④ 叫</option>
+          </select>
+        </div>
+        ) 留学生。我 (
+        <div class="select-container">
+          <select id="blank4" class="select-box">
+            <option value="">選択</option>
+            <option value="是">① 是</option>
+            <option value="学习">② 学习</option>
+            <option value="姓">③ 姓</option>
+            <option value="叫">④ 叫</option>
+          </select>
+        </div>
+        ) 中文。我不学习日文。再见！
+      </div>
+    </div>
+    
+    <!-- 回答確認ボタン -->
+    <button id="checkButton">回答を確認</button>
+    
+    <!-- フィードバック表示エリア -->
+    <div id="result" class="feedback"></div>
+    <ul id="answerList" class="answer-list"></ul>
+    
+    <!-- リトライボタン -->
+    <button id="retryButton" class="retry-button">もう一度挑戦</button>
+    
+    <!-- 全問正解時の戻るボタン -->
+    <button id="backButton" class="back-button">返回</button>
+    
+    <!-- 日本語訳セクション -->
+    <div class="section">
+      <h2>日本語訳</h2>
+      <div id="translationBox" class="text-box translation">
+        こんにちは！私は山本で、山本明です。<br>
+        私は大学生です。私は留学生ではありません。<br>
+        私は中国語を勉強します。私は日本語を勉強しません。<br>
+        さようなら！
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    // 「開始」ボタン処理
+    document.getElementById("startButton").addEventListener("click", function() {
+      document.getElementById("intro").style.display = "none";
+      document.getElementById("quizContent").style.display = "block";
+    });
+    
+    // 回答確認ボタンのイベント設定
+    document.getElementById("checkButton").addEventListener("click", checkAnswers);
+    
+    // リトライボタンのイベント設定
+    document.getElementById("retryButton").addEventListener("click", resetQuiz);
+    
+    // 戻るボタンのイベント設定
+    document.getElementById("backButton").addEventListener("click", function() {
+      window.location.href = "1k-l.html";
+    });
+    
+    function checkAnswers() {
+      // 正解の設定
+      const correctAnswers = {
+        blank1: "姓",   // 1番目の空は「姓」→ ③
+        blank2: "叫",   // 2番目の空は「叫」→ ④
+        blank3: "是",   // 3番目の空は「是」→ ①
+        blank4: "学习"  // 4番目の空は「学习」→ ②
+      };
+      let score = 0;
+      const total = 4;
+      
+      // ユーザーの選択値を取得
+      const userAnswers = {
+        blank1: document.getElementById("blank1").value,
+        blank2: document.getElementById("blank2").value,
+        blank3: document.getElementById("blank3").value,
+        blank4: document.getElementById("blank4").value
+      };
+      
+      // 未選択がある場合はアラートで通知
+      for (let key in userAnswers) {
+        if (userAnswers[key] === "") {
+          alert("全ての空欄に選択してください。");
+          return;
+        }
+      }
+      
+      // 採点と誤答リスト作成
+      const incorrectAnswers = [];
+      for (let key in correctAnswers) {
+        if (userAnswers[key] === correctAnswers[key]) {
+          score++;
+        } else {
+          incorrectAnswers.push(`${key.replace("blank", "第")}番目の空：正解は「${correctAnswers[key]}」`);
+        }
+      }
+      
+      // フィードバックの表示
+      const resultDiv = document.getElementById("result");
+      const answerList = document.getElementById("answerList");
+      const retryButton = document.getElementById("retryButton");
+      const backButton = document.getElementById("backButton");
+      const translationBox = document.getElementById("translationBox");
+      answerList.innerHTML = ""; // 前回の結果をクリア
+      resultDiv.className = "feedback"; // クラスをリセット
+      
+      if (score === total) {
+        resultDiv.textContent = "全問正解です！素晴らしいですね！";
+        resultDiv.classList.add("success");
+        answerList.style.display = "none";
+        retryButton.style.display = "none";
+        backButton.style.display = "block"; // 正解時は戻るボタンを表示
+        translationBox.style.display = "block"; // 日本語訳を表示
+      } else {
+        resultDiv.textContent = `${score}問正解です。もう一度挑戦しましょう！`;
+        resultDiv.classList.add("error");
+  
+        // 誤答の詳細表示
+        incorrectAnswers.forEach(function(item) {
+          const li = document.createElement("li");
+          li.textContent = item;
+          answerList.appendChild(li);
+        });
+        answerList.style.display = "block";
+        retryButton.style.display = "block";
+        backButton.style.display = "none"; // 不正解時は戻るボタンは非表示
+        translationBox.style.display = "none";
+      }
+    }
+    
+    function resetQuiz() {
+      // 各空欄をリセット
+      document.getElementById("blank1").value = "";
+      document.getElementById("blank2").value = "";
+      document.getElementById("blank3").value = "";
+      document.getElementById("blank4").value = "";
+  
+      // フィードバックと正解リストをクリア
+      const resultDiv = document.getElementById("result");
+      const answerList = document.getElementById("answerList");
+      const retryButton = document.getElementById("retryButton");
+      const backButton = document.getElementById("backButton");
+      const translationBox = document.getElementById("translationBox");
+      resultDiv.textContent = "";
+      resultDiv.className = "feedback";
+      answerList.innerHTML = "";
+      answerList.style.display = "none";
+      retryButton.style.display = "none";
+      backButton.style.display = "none";
+      translationBox.style.display = "none";
+    }
+  </script>
+</body>
+</html>
